@@ -30,6 +30,7 @@ int exec_builtin(const char *command, char *args[])
     }
     else if (!strcmp (command, "exit"))
     {
+        printf("%s\n", PROMPT_QUIT);
         exit(EXIT_SUCCESS);
     }
     else if (!strcmp (command, "cd"))
@@ -94,7 +95,8 @@ int main(int argc, char *argv[])
 	const char *cmd, *infile, *outfile;
 
 	/* prompt loop */
-	for (;;) {
+	while (1)
+    {
 		printf("%s", PROMPT);
 		input = fgets(command, COMMAND_MAX, stdin);
 
@@ -136,7 +138,5 @@ int main(int argc, char *argv[])
 			exec_external(cmd, args, infile, outfile, append);
 	}
 
-	printf("%s\n", PROMPT_QUIT);
-
-	return EXIT_SUCCESS;
+	return EXIT_FAILURE;
 }

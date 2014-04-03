@@ -15,7 +15,7 @@ char* prompt()
     return strcat(str, PROMPT_CHAR);
 }
 
-#define PROMPT_QUIT "exit"
+#define PROMPT_QUIT "Exiting our awesome prompt..."
 
 /* Maximum command size */
 #define COMMAND_MAX 65535

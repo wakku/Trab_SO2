@@ -1,7 +1,9 @@
 /*
+ * The Awesome Shell
  * main.c
  *
- * The alpha and omega.
+ * Vanessa Apolinario de Lima - 7239256
+ * Fernando Cury Gorodscy - 7152354
  */
 
 #include <fcntl.h>
@@ -16,31 +18,18 @@
 static char command[COMMAND_MAX+1];
 static char* args[ARGS_MAX+1];
 
-void help(void)
-{
-	fprintf(stderr, "To run commands: %sCOMMAND ARG [ ARG ... ] [ <INFILE ] [ >OUTFILE | >>OUTFILE ]\n", PROMPT);
-	fputs("Where both INFILE and OUTFILE are the path to a file\n", stderr);
-}
-
-int exec_builtin(const char *command, char *args[])
-{
-	if (!strcmp (command, "help"))
-    {
+int exec_builtin(const char *command, char *args[]) {
+    if (!strcmp (command, "help"))
         help();
-    }
-    else if (!strcmp (command, "exit"))
-    {
+    else if (!strcmp (command, "exit")) {
         printf("%s\n", PROMPT_QUIT);
         exit(EXIT_SUCCESS);
     }
     else if (!strcmp (command, "cd"))
-    {
         chdir(args[1]);
-    }
     else
-    {
         return 0;
-    }
+
     return 1;
 }
 
@@ -49,8 +38,7 @@ int exec_external(const char *cmd, char *args[], const char *infile, const char 
 	int status, infd, outfd;
 	pid_t cpid;
 
-	if ((cpid = fork()) == 0) {
-		/* child process */
+	if ((cpid = fork()) == 0) { /* child process */
 		if (infile != NULL) {
 			infd = open(infile, O_RDONLY);
 			if (infd < 0) {
@@ -80,10 +68,9 @@ int exec_external(const char *cmd, char *args[], const char *infile, const char 
 			fprintf(stderr, "ffsh: %s: command not found\n", cmd);
 			exit(EXIT_FAILURE);
 		}
-	} else {
-		/* parent process */
+	} 
+	else /* parent process */
 		waitpid(cpid, &status, 0);
-	}
 
 	return 1;
 }
@@ -95,8 +82,8 @@ int main(int argc, char *argv[])
 	const char *cmd, *infile, *outfile;
 
 	/* prompt loop */
-	while (1)
-    {
+	while (1) {
+
 		printf("%s", PROMPT);
 		input = fgets(command, COMMAND_MAX, stdin);
 

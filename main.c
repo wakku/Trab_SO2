@@ -4,8 +4,23 @@
 #include <stdio.h>
 #include <foosh.h>
 #include <debug.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
-#define PROMPT "@:"
+#define PROMPT_CHAR " -> "
+#define PROMPT prompt()
+#define PATH_SIZE 255
+
+char* prompt()
+{
+    char* str = (char*) malloc(sizeof(char)*PATH_SIZE);
+    getcwd(str, PATH_SIZE);
+    return strcat(str, PROMPT_CHAR);
+}
 
 /* void test(void); */
 
@@ -19,6 +34,7 @@ void help(void)
 
 int exec_builtin(const char *command, char *args[])
 {
+    
 	if (!strcmp (command, "help"))
     {
         help();
@@ -29,13 +45,94 @@ int exec_builtin(const char *command, char *args[])
     }
     else if (!strcmp (command, "cd"))
     {
-        /*chdir(args[1]);*/
+        chdir(args[1]);
+    }
+    else if (!strcmp (command, "jobs"))
+    {
+        
+    }
+    else if (!strcmp (command, "bg"))
+    {
+        
+    }
+    else if (!strcmp (command, "fg"))
+    {
+        
     }
     else
     {
         return 0;
     }
     return 1;
+}
+
+int exec_external(const char *cmd, char *args[])
+{
+	int i, status, infd, outfd, append = 0;
+    const char *infile, *outfile;
+	pid_t cpid;
+    
+    infile = outfile = NULL;
+    for (i = 0; args[i]; i++) {
+        switch (*args[i]) {
+			case '<':
+				/* change input file */
+				if (*args[i+1] == '\0'){}
+					/*infile = strtok(NULL, WORD_DELIMITERS);*/
+				else
+					infile = args[i+1];
+				break;
+			case '>':
+				/* change output file */
+				if (*args[i+1] != '\0' && *args[i+1] != '>')
+					outfile = args[i+1];
+				else if (*args[i+1] == '\0' || *args[i+2] == '\0'){}
+					/*outfile = strtok(NULL, WORD_DELIMITERS);*/
+				else if (*args[i+1] == '>') {
+					append = 1;
+					outfile = args[i+2];
+				}
+				break;
+        }
+    }
+    
+	if ((cpid = fork()) == 0) {
+		/* child process */
+		if (infile != NULL) {
+			infd = open(infile, O_RDONLY);
+			if (infd < 0) {
+				fprintf(stderr, "%s %s: ", PROMPT, infile);
+				perror(NULL);
+				exit(EXIT_FAILURE);
+			}
+			dup2(infd, 0);
+		}
+        
+		if (outfile != NULL) {
+			int flags = O_CREAT | O_WRONLY;
+			if (!append)
+				flags |= O_TRUNC;
+			else
+				flags |= O_APPEND;
+			outfd = open(outfile, flags);
+			if (infd < 0) {
+				fprintf(stderr, "%s %s: ", PROMPT, outfile);
+				perror(NULL);
+				exit(EXIT_FAILURE);
+			}
+			dup2(outfd, 1);
+		}
+        
+		if (execvp(cmd, args) < 0) {
+			fprintf(stderr, "%s %s: command not found\n", PROMPT, cmd);
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		/* parent process */
+		waitpid(cpid, &status, 0);
+	}
+    
+	return 1;
 }
 
 int main (int argc, char **argv)
@@ -62,18 +159,14 @@ int main (int argc, char **argv)
       if (!parse_command_line (command_line, pipeline) || 1)
 	{
 
-	  
-	  /* This is an example, of how to use pipeline_t. 
-	     See foosh.h for detailed information. */
-
-	  printf ("  Pipeline has %d command(s)\n", pipeline->ncommands);
-
 	  for (i=0; pipeline->command[i][0]; i++)
 	    {
 	      printf ("  Command %d has %d argument(s): ", i, pipeline->narguments[i]);
           for (j=0; pipeline->command[i][j]; j++){
               printf ("%s ", pipeline->command[i][j]);
-              exec_builtin(pipeline->command[i][0], pipeline->command[i]);
+              if (!exec_builtin(pipeline->command[i][0], pipeline->command[i])){
+                  exec_external(pipeline->command[i][0], pipeline->command[i]);
+              }
           }
 	      printf ("\n");
 	    }

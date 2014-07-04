@@ -11,6 +11,33 @@
 
 int go_on = 1;			/* This variable controls the main loop. */
 
+void help(void)
+{
+	fprintf(stderr, "To run commands: %sCOMMAND ARG [ ARG ... ] [ <INFILE ] [ >OUTFILE | >>OUTFILE ]\n", PROMPT);
+	fputs("Where both INFILE and OUTFILE are the path to a file\n", stderr);
+}
+
+int exec_builtin(const char *command, char *args[])
+{
+	if (!strcmp (command, "help"))
+    {
+        help();
+    }
+    else if (!strcmp (command, "exit"))
+    {
+        exit(EXIT_SUCCESS);
+    }
+    else if (!strcmp (command, "cd"))
+    {
+        /*chdir(args[1]);*/
+    }
+    else
+    {
+        return 0;
+    }
+    return 1;
+}
+
 int main (int argc, char **argv)
 {
   buffer_t *command_line;
@@ -44,8 +71,10 @@ int main (int argc, char **argv)
 	  for (i=0; pipeline->command[i][0]; i++)
 	    {
 	      printf ("  Command %d has %d argument(s): ", i, pipeline->narguments[i]);
-	      for (j=0; pipeline->command[i][j]; j++)
-		printf ("%s ", pipeline->command[i][j]);
+          for (j=0; pipeline->command[i][j]; j++){
+              printf ("%s ", pipeline->command[i][j]);
+              exec_builtin(pipeline->command[i][0], pipeline->command[i]);
+          }
 	      printf ("\n");
 	    }
 	  

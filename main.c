@@ -89,7 +89,7 @@ int exec_external(const char *cmd, char *args[], const char *infile, const char 
 				flags |= O_TRUNC;
 			else
 				flags |= O_APPEND;
-			outfd = open(outfile, flags);
+			outfd = open(outfile, flags, 511);
 			if (infd < 0) {
 				fprintf(stderr, "%s %s: ", PROMPT, outfile);
 				perror(NULL);
@@ -113,7 +113,7 @@ int exec_external(const char *cmd, char *args[], const char *infile, const char 
 int main (int argc, char **argv)
 {
   buffer_t *command_line;
-  int i, j, aux;
+  int i, aux;
 
   pipeline_t *pipeline;
 
@@ -136,12 +136,10 @@ int main (int argc, char **argv)
 
 	  for (i=0; pipeline->command[i][0]; i++)
 	    {
-          for (j=0; pipeline->command[i][j]; j++){
-              if (!exec_builtin(pipeline->command[i][0], pipeline->command[i])){
-                  exec_external(pipeline->command[i][0], pipeline->command[i], pipeline->file_in, pipeline->file_out);
-              }
-          }
-	    }
+            if (!exec_builtin(pipeline->command[i][0], pipeline->command[i])){
+                exec_external(pipeline->command[i][0], pipeline->command[i], pipeline->file_in, pipeline->file_out);
+            }
+        }
 	  
 
 	  if ( RUN_FOREGROUND(pipeline))

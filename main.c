@@ -76,7 +76,7 @@ int exec_external(const char *cmd, char *args[], const char *infile, const char 
 		if (strlen(infile) != 0) {
 			infd = open(infile, O_RDONLY);
 			if (infd < 0) {
-				fprintf(stderr, "%s %s: ", PROMPT, infile);
+				fprintf(stderr, "%s: ", infile);
 				perror(NULL);
 				exit(EXIT_FAILURE);
 			}
@@ -91,7 +91,7 @@ int exec_external(const char *cmd, char *args[], const char *infile, const char 
 				flags |= O_APPEND;
 			outfd = open(outfile, flags, 511);
 			if (infd < 0) {
-				fprintf(stderr, "%s %s: ", PROMPT, outfile);
+				fprintf(stderr, "%s: ", outfile);
 				perror(NULL);
 				exit(EXIT_FAILURE);
 			}
@@ -99,12 +99,12 @@ int exec_external(const char *cmd, char *args[], const char *infile, const char 
 		}
         
 		if (execvp(cmd, args) < 0) {
-			fprintf(stderr, "%s %s: command not found\n", PROMPT, cmd);
+			fprintf(stderr, "%s: command not found\n", cmd);
 			exit(EXIT_FAILURE);
 		}
 	} else {
 		/* parent process */
-		waitpid(cpid, &status, 0);
+        waitpid(cpid, &status, 0);
 	}
     
 	return 1;
@@ -160,6 +160,8 @@ int main (int argc, char **argv)
 
   release_command_line (command_line);
   release_pipeline (pipeline);
+    
+  printf ("\n%s ", PROMPT);
 
   return EXIT_SUCCESS;
 }

@@ -41,7 +41,7 @@ int exec_builtin(const char *command, char *args[])
     }
     else if (!strcmp (command, "exit"))
     {
-        exit(EXIT_SUCCESS);
+        go_on = 0;
     }
     else if (!strcmp (command, "cd"))
     {
@@ -66,13 +66,26 @@ int exec_builtin(const char *command, char *args[])
     return 1;
 }
 
-int exec_external(const char *cmd, char *args[], const char *infile, const char *outfile)
+int exec_external(const char *cmd, char *args[], const char *infile, const char *outfile, int count)
 {
-	int flags, status, infd, outfd, append = 1;
+	int flags, status, infd, outfd, append = 1, fd[2];
 	pid_t cpid;
+    
+    pipe (fd);
     
 	if ((cpid = fork()) == 0) {
 		/* child process */
+        
+        /* If not the first in the pipeline */
+        if(count != 0)
+        {
+            dup2 (fd[0], 0);
+        }
+        /* if not the last */
+        if (cmd != NULL) {
+            dup2 (fd[1], 1);
+        }
+        
 		if (strlen(infile) != 0) {
 			infd = open(infile, O_RDONLY);
 			if (infd < 0) {
@@ -131,13 +144,12 @@ int main (int argc, char **argv)
 
       /* Parse command line. */
 
-      if (!parse_command_line (command_line, pipeline) || 1)
-	{
+      parse_command_line (command_line, pipeline);
 
 	  for (i=0; pipeline->command[i][0]; i++)
 	    {
             if (!exec_builtin(pipeline->command[i][0], pipeline->command[i])){
-                exec_external(pipeline->command[i][0], pipeline->command[i], pipeline->file_in, pipeline->file_out);
+                exec_external(pipeline->command[i][0], pipeline->command[i], pipeline->file_in, pipeline->file_out, i);
             }
         }
 	  
@@ -156,7 +168,6 @@ int main (int argc, char **argv)
 
 
 	}
-    }
 
   release_command_line (command_line);
   release_pipeline (pipeline);

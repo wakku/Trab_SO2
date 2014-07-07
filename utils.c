@@ -21,7 +21,7 @@ list_t *new_list (void (*del)(void*))
 
 /* Free memory used by a list. */
 
-void free_list (list_t *list)
+void release_list (list_t *list)
 {
   list_node_t *p;
 

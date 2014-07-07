@@ -107,9 +107,9 @@ pipeline_t *new_pipeline (void)
   sysfault (!pipeline, NULL);
   
 
-  pipeline->command = malloc ((MAX_COMMANDS+1)*sizeof(char**));
-
   /* Allocate a pipeline structure. */
+
+  pipeline->command = malloc ((MAX_COMMANDS+1)*sizeof(char**));
   if (!pipeline->command)
     {
       sysdebug (1);
@@ -142,13 +142,14 @@ pipeline_t *new_pipeline (void)
 
 void release_pipeline (pipeline_t *pipeline)
 {
-  int i,j;			/* Iterate through commands. */
+  /* int i,j;			 */
+  int i;                     /* Iterate through commands. */
   for (i=0; i<MAX_COMMANDS; i++)
     {
-      for (j=0; i<MAX_ARGUMENTS; j++)
-	{
-	  free (pipeline->command[i][j]);
-	}
+      /* for (j=0; i<MAX_ARGUMENTS; j++) */
+      /* 	{ */
+      /* 	  free (pipeline->command[i][j]); */
+      /* 	} */
       free (pipeline->command[i]);
     }
 }

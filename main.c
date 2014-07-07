@@ -66,58 +66,66 @@ int exec_builtin(const char *command, char *args[])
     return 1;
 }
 
-int exec_external(const char *cmd, char *args[], const char *infile, const char *outfile, int count)
+int exec_external(pipeline_t* pipeline, int pipeA[2], int count)
 {
-	int flags, status, infd, outfd, append = 1, fd[2];
+	int flags, status, infd, outfd, append = 0, pipeB[2];
 	pid_t cpid;
     
-    pipe (fd);
+    if (pipeline->command[count][0] == NULL) {
+        return 0;
+    }
+    
+    pipe (pipeB);
     
 	if ((cpid = fork()) == 0) {
 		/* child process */
         
-        /* If not the first in the pipeline */
-        if(count != 0)
+        /* If not the first in the pipeline, redirect input */
+        if(count > 0)
         {
-            dup2 (fd[0], 0);
+            dup2 (pipeA[0], 0);
         }
-        /* if not the last */
-        if (cmd != NULL) {
-            dup2 (fd[1], 1);
+        /* if not the last, redirect output */
+        if (count < pipeline->ncommands-1) {
+            dup2 (pipeB[1], 1);
         }
+        close(pipeB[0]);
         
-		if (strlen(infile) != 0) {
-			infd = open(infile, O_RDONLY);
+		if (strlen(pipeline->file_in) != 0) {
+			infd = open(pipeline->file_in, O_RDONLY);
 			if (infd < 0) {
-				fprintf(stderr, "%s: ", infile);
+				fprintf(stderr, "%s: ", pipeline->file_in);
 				perror(NULL);
 				exit(EXIT_FAILURE);
 			}
 			dup2(infd, 0);
 		}
         
-		if (strlen(outfile) != 0) {
+		if (strlen(pipeline->file_out) != 0) {
             flags = O_CREAT | O_WRONLY;
 			if (!append)
 				flags |= O_TRUNC;
 			else
 				flags |= O_APPEND;
-			outfd = open(outfile, flags, 511);
+			outfd = open(pipeline->file_out, flags, 511);
 			if (infd < 0) {
-				fprintf(stderr, "%s: ", outfile);
+				fprintf(stderr, "%s: ", pipeline->file_out);
 				perror(NULL);
 				exit(EXIT_FAILURE);
 			}
 			dup2(outfd, 1);
 		}
         
-		if (execvp(cmd, args) < 0) {
-			fprintf(stderr, "%s: command not found\n", cmd);
+		if (execvp(pipeline->command[count][0], pipeline->command[count]) < 0) {
+			fprintf(stderr, "%s: command not found\n", pipeline->command[count][0]);
 			exit(EXIT_FAILURE);
 		}
 	} else {
 		/* parent process */
-        waitpid(cpid, &status, 0);
+        if (count < pipeline->ncommands) {
+            exec_external(pipeline, pipeB, ++count);
+            waitpid(cpid, &status, 0);
+        }
 	}
     
 	return 1;
@@ -149,30 +157,19 @@ int main (int argc, char **argv)
 	  for (i=0; pipeline->command[i][0]; i++)
 	    {
             if (!exec_builtin(pipeline->command[i][0], pipeline->command[i])){
-                exec_external(pipeline->command[i][0], pipeline->command[i], pipeline->file_in, pipeline->file_out, i);
+                exec_external(pipeline, NULL, 0);
             }
         }
 	  
-
-	  if ( RUN_FOREGROUND(pipeline))
+	  /*if ( RUN_FOREGROUND(pipeline))
 	    printf ("  Run pipeline in foreground\n");
 	  else
-	    printf ("  Run pipeline in background\n");
-
-	  
-	  
-	  if ( REDIRECT_STDIN(pipeline))
-	    printf ("  Redirect input from %s\n", pipeline->file_in);
-	  if ( REDIRECT_STDOUT(pipeline))
-	    printf ("  Redirect output to  %s\n", pipeline->file_out);
-
+	    printf ("  Run pipeline in background\n");*/
 
 	}
 
   release_command_line (command_line);
   release_pipeline (pipeline);
-    
-  printf ("\n%s ", PROMPT);
 
   return EXIT_SUCCESS;
 }
